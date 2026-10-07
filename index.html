@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulador de Casos Clínicos con Gemini</title>
+  <title>Simulador Clínico & Paciente Virtual</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen p-4 md:p-8">
 
   <div class="max-w-4xl mx-auto">
-    <!-- Header -->
-    <header class="bg-gradient-to-r from-blue-900 to-indigo-950 text-white p-6 rounded-2xl shadow-lg mb-6">
-      <h1 class="text-2xl font-bold tracking-tight">Simulador Clínico & Tutor IA</h1>
-      <p class="text-blue-200 text-sm mt-1">Entrenamiento diagnóstico sobre casos reales con Gemini API</p>
+    <!-- Encabezado -->
+    <header class="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 rounded-2xl shadow-lg mb-6">
+      <h1 class="text-2xl font-bold tracking-tight">Simulador Clínico & Tutor Inteligente</h1>
+      <p class="text-blue-200 text-xs mt-1">Dataset de 2,194 Casos Clínicos + Gemini AI</p>
       
-      <!-- Configuración API Key y Archivo -->
       <div class="mt-4 pt-4 border-t border-blue-800 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
         <div>
           <label class="block text-blue-200 mb-1 font-semibold">1. Tu Google AI API Key:</label>
@@ -22,65 +21,107 @@
                  class="w-full px-3 py-2 rounded-lg bg-blue-950 border border-blue-700 text-white focus:outline-none focus:ring-1 focus:ring-blue-400">
         </div>
         <div>
-          <label class="block text-blue-200 mb-1 font-semibold">2. Cargar casos (.jsonl):</label>
+          <label class="block text-blue-200 mb-1 font-semibold">2. Cargar archivo (.jsonl):</label>
           <input type="file" id="fileInput" accept=".jsonl" 
                  class="w-full px-3 py-1.5 rounded-lg bg-blue-950 border border-blue-700 text-white file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-blue-600 file:text-white cursor-pointer">
         </div>
       </div>
-      <p id="statusMsg" class="text-xs text-blue-300 mt-2">Introduce tu API Key y sube el archivo descargado para empezar.</p>
+      <p id="statusMsg" class="text-xs text-blue-300 mt-2">Carga tu clave y el archivo para comenzar.</p>
     </header>
 
-    <!-- Área de Trabajo (Oculta al inicio) -->
-    <div id="workspace" class="hidden space-y-6">
+    <!-- Interfaz de Trabajo -->
+    <div id="workspace" class="hidden space-y-4">
       
-      <!-- Controles de Navegación -->
+      <!-- Selector de Modo y Filtros -->
       <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-3">
-        <input type="text" id="searchInput" placeholder="Filtrar por síntoma o enfermedad..." 
-               class="px-3 py-2 border border-slate-300 rounded-lg text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-600">
-        
+        <div class="flex gap-2">
+          <button id="tabModeQ" class="px-4 py-2 text-xs font-bold rounded-lg bg-blue-700 text-white transition">Modo Examen / Rondas</button>
+          <button id="tabModeChat" class="px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition">Modo Paciente Virtual (Chat)</button>
+        </div>
+
         <div class="flex items-center gap-2">
-          <button id="prevBtn" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-xs font-semibold rounded-lg">Anterior</button>
+          <input type="text" id="searchInput" placeholder="Buscar enfermedad..." class="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs w-40">
+          <button id="prevBtn" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-xs font-semibold rounded-lg">Ant</button>
           <span id="counter" class="text-xs font-semibold text-slate-600">0 / 0</span>
-          <button id="nextBtn" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-xs font-semibold rounded-lg">Siguiente</button>
-          <button id="randomBtn" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg">Caso Aleatorio</button>
+          <button id="nextBtn" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-xs font-semibold rounded-lg">Sig</button>
+          <button id="randomBtn" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg">Aleatorio</button>
         </div>
       </div>
 
-      <!-- Presentación del Paciente -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div class="flex justify-between items-center mb-3">
-          <h2 class="text-sm font-bold text-blue-900 uppercase tracking-wider" id="caseTitle">Caso Clínico</h2>
-          <span id="blurredDx" class="filter blur-sm bg-slate-200 px-3 py-1 rounded text-xs font-bold cursor-pointer select-none" title="Clic para ver">Diagnóstico Oculto</span>
-        </div>
-        <div id="patientText" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700 whitespace-pre-wrap font-sans leading-relaxed">
-          <!-- Datos del paciente -->
-        </div>
-      </div>
-
-      <!-- Sección de Interacción con Gemini -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
-        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wide">Tu Evaluación Clínica & Feedback con Gemini</h3>
-        
-        <textarea id="studentHypothesis" rows="3" placeholder="Escribe tu hipótesis diagnóstica, estudios solicitados o plan de manejo..." 
-                  class="w-full p-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-600"></textarea>
-
-        <div class="flex gap-3">
-          <button id="evaluateBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition shadow">
-            Evaluar mi respuesta con Gemini
-          </button>
-          <button id="toggleCaseBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold px-4 py-2.5 rounded-lg transition">
-            Ver consulta completa del dataset
-          </button>
+      <!-- ================= MODO 1: BANCO DE PREGUNTAS ================= -->
+      <section id="viewModeQ" class="space-y-4">
+        <!-- Viñeta Clínica -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="flex justify-between items-center mb-3">
+            <h2 class="text-xs font-bold text-blue-900 uppercase tracking-wider" id="caseTitleQ">Viñeta Clínica</h2>
+            <span id="blurredDxQ" class="filter blur-sm bg-slate-200 px-3 py-1 rounded text-xs font-bold cursor-pointer select-none" title="Clic para revelar">Diagnóstico Oculto</span>
+          </div>
+          <div id="vignetteText" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm leading-relaxed text-slate-700 whitespace-pre-wrap font-sans">
+          </div>
         </div>
 
-        <div id="feedbackArea" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs leading-relaxed text-slate-800 space-y-2">
-          <!-- Respuesta de Gemini -->
+        <!-- Cuestionario Clínico -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-3">
+          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wide">Resolución del Caso</h3>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">1. Diagnóstico más probable y diferenciales:</label>
+            <input type="text" id="ansDx" placeholder="Ej: Apendicitis aguda vs. diverticulitis de Meckel" class="w-full p-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">2. Prueba diagnóstica confirmatoria / inicial:</label>
+            <input type="text" id="ansWorkup" placeholder="Ej: Ultrasonido abdominal / TAC con contraste" class="w-full p-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">3. Manejo de primera línea:</label>
+            <input type="text" id="ansRx" placeholder="Ej: NPO + hidratación IV + apendicectomía laparoscópica" class="w-full p-2 border border-slate-300 rounded-lg text-xs">
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button id="evaluateQBtn" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg shadow transition">
+              Calificar Respuestas con Gemini
+            </button>
+            <button id="toggleCaseTextBtn" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-lg transition">
+              Ver Encuentro Completo
+            </button>
+          </div>
+
+          <div id="feedbackQArea" class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs leading-relaxed text-slate-800 space-y-2"></div>
+          <div id="fullCaseText" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs font-mono whitespace-pre-wrap max-h-80 overflow-y-auto text-slate-700"></div>
+        </div>
+      </section>
+
+      <!-- ================= MODO 2: PACIENTE VIRTUAL (CHAT) ================= -->
+      <section id="viewModeChat" class="hidden space-y-4">
+        <!-- Entrada a Consulta -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Entrada del Paciente</h2>
+            <span id="blurredDxChat" class="filter blur-sm bg-slate-200 px-3 py-1 rounded text-xs font-bold cursor-pointer select-none" title="Clic para revelar">Diagnóstico Oculto</span>
+          </div>
+          <div id="chiefComplaintBox" class="bg-indigo-50 border border-indigo-100 p-4 rounded-lg text-sm text-indigo-950 font-medium leading-relaxed">
+          </div>
         </div>
 
-        <div id="fullMeetingArea" class="hidden bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs font-mono whitespace-pre-wrap max-h-80 overflow-y-auto text-slate-700">
-          <!-- Diálogo completo -->
+        <!-- Chat de Consulta -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+          <div id="chatHistory" class="space-y-3 max-h-96 overflow-y-auto p-2 border border-slate-200 rounded-lg bg-slate-50 text-xs">
+            <div class="text-slate-500 italic text-center py-2">Comienza la consulta haciéndole preguntas al paciente sobre su dolor, síntomas o antecedentes...</div>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="chatInput" placeholder="Haz una pregunta al paciente..." class="w-full p-2.5 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-600">
+            <button id="sendChatBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-4 py-2.5 rounded-lg text-xs transition">Preguntar</button>
+          </div>
+
+          <div class="pt-2 border-t flex justify-between items-center">
+            <button id="finishConsultBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2.5 rounded-lg transition">
+              Concluir Consulta y Recibir Evaluación
+            </button>
+          </div>
+
+          <div id="feedbackChatArea" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-xs leading-relaxed text-emerald-950"></div>
         </div>
-      </div>
+      </section>
 
     </div>
   </div>
@@ -89,37 +130,63 @@
     let cases = [];
     let filteredCases = [];
     let currentIndex = 0;
+    let chatConversation = [];
 
     const apiKeyInput = document.getElementById('apiKeyInput');
     const fileInput = document.getElementById('fileInput');
     const statusMsg = document.getElementById('statusMsg');
     const workspace = document.getElementById('workspace');
+    const searchInput = document.getElementById('searchInput');
     const counter = document.getElementById('counter');
-    const caseTitle = document.getElementById('caseTitle');
-    const blurredDx = document.getElementById('blurredDx');
-    const patientText = document.getElementById('patientText');
-    const studentHypothesis = document.getElementById('studentHypothesis');
-    const evaluateBtn = document.getElementById('evaluateBtn');
-    const feedbackArea = document.getElementById('feedbackArea');
-    const fullMeetingArea = document.getElementById('fullMeetingArea');
-    const toggleCaseBtn = document.getElementById('toggleCaseBtn');
 
-    // Cargar clave guardada en el navegador si existe
-    if (localStorage.getItem('gemini_key')) {
-      apiKeyInput.value = localStorage.getItem('gemini_key');
-    }
+    // Vistas / Pestañas
+    const tabModeQ = document.getElementById('tabModeQ');
+    const tabModeChat = document.getElementById('tabModeChat');
+    const viewModeQ = document.getElementById('viewModeQ');
+    const viewModeChat = document.getElementById('viewModeChat');
 
-    apiKeyInput.addEventListener('change', () => {
-      localStorage.setItem('gemini_key', apiKeyInput.value.trim());
+    // Modo Preguntas
+    const vignetteText = document.getElementById('vignetteText');
+    const blurredDxQ = document.getElementById('blurredDxQ');
+    const evaluateQBtn = document.getElementById('evaluateQBtn');
+    const feedbackQArea = document.getElementById('feedbackQArea');
+    const fullCaseText = document.getElementById('fullCaseText');
+    const toggleCaseTextBtn = document.getElementById('toggleCaseTextBtn');
+
+    // Modo Chat
+    const chiefComplaintBox = document.getElementById('chiefComplaintBox');
+    const blurredDxChat = document.getElementById('blurredDxChat');
+    const chatHistory = document.getElementById('chatHistory');
+    const chatInput = document.getElementById('chatInput');
+    const sendChatBtn = document.getElementById('sendChatBtn');
+    const finishConsultBtn = document.getElementById('finishConsultBtn');
+    const feedbackChatArea = document.getElementById('feedbackChatArea');
+
+    // Cargar API Key
+    if (localStorage.getItem('gemini_key')) apiKeyInput.value = localStorage.getItem('gemini_key');
+    apiKeyInput.addEventListener('change', () => localStorage.setItem('gemini_key', apiKeyInput.value.trim()));
+
+    // Alternar pestañas
+    tabModeQ.addEventListener('click', () => {
+      tabModeQ.className = "px-4 py-2 text-xs font-bold rounded-lg bg-blue-700 text-white transition";
+      tabModeChat.className = "px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+      viewModeQ.classList.remove('hidden');
+      viewModeChat.classList.add('hidden');
     });
 
+    tabModeChat.addEventListener('click', () => {
+      tabModeChat.className = "px-4 py-2 text-xs font-bold rounded-lg bg-indigo-700 text-white transition";
+      tabModeQ.className = "px-4 py-2 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition";
+      viewModeChat.classList.remove('hidden');
+      viewModeQ.classList.add('hidden');
+    });
+
+    // Cargar archivo JSONL
     fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
-      statusMsg.textContent = "Procesando archivo .jsonl...";
+      statusMsg.textContent = "Cargando casos clínicos...";
       const reader = new FileReader();
-
       reader.onload = function(evt) {
         const lines = evt.target.result.split('\n');
         cases = [];
@@ -129,114 +196,197 @@
           }
         }
         filteredCases = [...cases];
-        statusMsg.textContent = `¡Listo! Se cargaron ${cases.length} casos clínicos.`;
+        statusMsg.textContent = `¡Listo! ${cases.length} casos cargados.`;
         workspace.classList.remove('hidden');
-        currentIndex = 0;
-        renderCase();
+        renderCurrentCase();
       };
       reader.readAsText(file);
     });
 
-    function renderCase() {
+    function renderCurrentCase() {
       if (!filteredCases.length) return;
       const c = filteredCases[currentIndex];
       counter.textContent = `${currentIndex + 1} / ${filteredCases.length}`;
-      caseTitle.textContent = `Caso Clínico #${currentIndex + 1}`;
-
       const raw = c.text || c.conversation || JSON.stringify(c);
       const lines = raw.split('\n');
-      patientText.textContent = lines.slice(0, 14).join('\n');
-      
-      blurredDx.textContent = c.disease || c.title || "Diagnóstico";
-      blurredDx.classList.add('blur-sm');
 
-      feedbackArea.classList.add('hidden');
-      feedbackArea.innerHTML = '';
-      fullMeetingArea.classList.add('hidden');
-      fullMeetingArea.textContent = raw;
-      studentHypothesis.value = '';
+      // Extraer porción inicial
+      const initialSnippet = lines.slice(0, 10).join('\n');
+      vignetteText.textContent = initialSnippet;
+      chiefComplaintBox.textContent = lines.slice(0, 5).join('\n');
+
+      // Diagnóstico oculto
+      const dxName = c.disease || c.title || "Diagnóstico";
+      blurredDxQ.textContent = dxName;
+      blurredDxQ.classList.add('blur-sm');
+      blurredDxChat.textContent = dxName;
+      blurredDxChat.classList.add('blur-sm');
+
+      // Limpiar estados
+      fullCaseText.textContent = raw;
+      fullCaseText.classList.add('hidden');
+      feedbackQArea.classList.add('hidden');
+      feedbackQArea.innerHTML = '';
+      document.getElementById('ansDx').value = '';
+      document.getElementById('ansWorkup').value = '';
+      document.getElementById('ansRx').value = '';
+
+      // Resetear chat de paciente virtual
+      chatConversation = [];
+      chatHistory.innerHTML = `<div class="text-slate-500 italic text-center py-2">Comienza la consulta interrogando al paciente...</div>`;
+      feedbackChatArea.classList.add('hidden');
     }
 
-    blurredDx.addEventListener('click', () => blurredDx.classList.toggle('blur-sm'));
+    [blurredDxQ, blurredDxChat].forEach(el => el.addEventListener('click', () => el.classList.toggle('blur-sm')));
 
-    document.getElementById('nextBtn').addEventListener('click', () => {
-      if (currentIndex < filteredCases.length - 1) { currentIndex++; renderCase(); }
-    });
-    document.getElementById('prevBtn').addEventListener('click', () => {
-      if (currentIndex > 0) { currentIndex--; renderCase(); }
-    });
-    document.getElementById('randomBtn').addEventListener('click', () => {
-      currentIndex = Math.floor(Math.random() * filteredCases.length);
-      renderCase();
-    });
+    // Navegación
+    document.getElementById('nextBtn').addEventListener('click', () => { if (currentIndex < filteredCases.length - 1) { currentIndex++; renderCurrentCase(); } });
+    document.getElementById('prevBtn').addEventListener('click', () => { if (currentIndex > 0) { currentIndex--; renderCurrentCase(); } });
+    document.getElementById('randomBtn').addEventListener('click', () => { currentIndex = Math.floor(Math.random() * filteredCases.length); renderCurrentCase(); });
+    toggleCaseTextBtn.addEventListener('click', () => fullCaseText.classList.toggle('hidden'));
 
-    toggleCaseBtn.addEventListener('click', () => fullMeetingArea.classList.toggle('hidden'));
-
-    // Llamada directa a la API de Gemini desde el navegador
-    evaluateBtn.addEventListener('click', async () => {
+    // Llamada Genérica a Gemini API
+    async function callGemini(promptText) {
       const key = apiKeyInput.value.trim();
-      const answer = studentHypothesis.value.trim();
+      if (!key) throw new Error("Falta la API Key de Gemini en la parte superior.");
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error.message);
+      return data.candidates[0].content.parts[0].text;
+    }
 
-      if (!key) {
-        alert("Por favor ingresa tu API Key de Gemini en la parte superior.");
-        return;
-      }
-      if (!answer) {
-        alert("Escribe primero tu impresión diagnóstica o plan clínico.");
-        return;
-      }
+    // Evaluar Modo Preguntas
+    evaluateQBtn.addEventListener('click', async () => {
+      const dx = document.getElementById('ansDx').value.trim();
+      const workup = document.getElementById('ansWorkup').value.trim();
+      const rx = document.getElementById('ansRx').value.trim();
 
-      evaluateBtn.disabled = true;
-      evaluateBtn.textContent = "Consultando a Gemini...";
-      feedbackArea.classList.remove('hidden');
-      feedbackArea.innerHTML = "<em>Analizando tu respuesta con el caso de referencia...</em>";
+      if (!dx && !workup && !rx) return alert("Responde al menos una de las preguntas.");
 
-      const currentCaseText = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      evaluateQBtn.disabled = true;
+      evaluateQBtn.textContent = "Evaluando...";
+      feedbackQArea.classList.remove('hidden');
+      feedbackQArea.innerHTML = "<em>El tutor de IA está evaluando tus respuestas con el estándar clínico...</em>";
 
-      const promptText = `Actúa como médico especialista docente evaluando a un interno de medicina.
+      const caseData = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      const prompt = `Actúa como médico docente evaluando a un interno de medicina.
 Caso clínico de referencia:
 """
-${currentCaseText}
+${caseData}
 """
 
-Respuesta del estudiante:
-"""
-${answer}
-"""
+Respuestas del estudiante:
+- Sospecha Diagnóstica: ${dx}
+- Pruebas diagnósticas / Labs: ${workup}
+- Manejo inicial / Terapéutica: ${rx}
 
-Instrucciones:
-1. Indica si el diagnóstico y manejo son correctos o acertados.
-2. Señala aciertos y omisiones importantes según el caso.
-3. Proporciona una recomendación breve de manejo basada en evidencia.`;
+Proporciona:
+1. Calificación concisa de cada punto (Acierto / Error / Omisión).
+2. La respuesta correcta según el caso y guías de práctica clínica.
+3. Perla clínica (*High-Yield*) para recordar este cuadro.`;
 
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: promptText }] }]
-          })
-        });
-
-        const data = await res.json();
-        if (data.error) throw new Error(data.error.message);
-
-        const reply = data.candidates[0].content.parts[0].text;
-        feedbackArea.innerHTML = `<h4 class="font-bold text-blue-900 mb-1">Feedback del Tutor:</h4><p class="whitespace-pre-wrap font-sans">${reply}</p>`;
+        const reply = await callGemini(prompt);
+        feedbackQArea.innerHTML = `<h4 class="font-bold text-blue-900 mb-1">Feedback del Docente:</h4><div class="whitespace-pre-wrap font-sans">${reply}</div>`;
       } catch (err) {
-        feedbackArea.innerHTML = `<span class="text-red-600 font-semibold">Error al conectar con la API: ${err.message}</span>`;
+        feedbackQArea.innerHTML = `<span class="text-red-600 font-semibold">Error: ${err.message}</span>`;
       } finally {
-        evaluateBtn.disabled = false;
-        evaluateBtn.textContent = "Evaluar mi respuesta con Gemini";
+        evaluateQBtn.disabled = false;
+        evaluateQBtn.textContent = "Calificar Respuestas con Gemini";
       }
     });
 
-    document.getElementById('searchInput').addEventListener('input', (e) => {
+    // Modo Paciente Virtual - Enviar Mensaje
+    async function sendPatientMessage() {
+      const msg = chatInput.value.trim();
+      if (!msg) return;
+
+      chatInput.value = '';
+      chatHistory.innerHTML += `<div class="text-right"><span class="inline-block bg-indigo-600 text-white px-3 py-1.5 rounded-lg max-w-xs md:max-w-md text-left">${msg}</span></div>`;
+      chatHistory.scrollTop = chatHistory.scrollHeight;
+
+      chatConversation.push({ role: "Doctor", message: msg });
+      sendChatBtn.disabled = true;
+
+      const caseData = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      const prompt = `Actúa como un paciente en consulta médica.
+Información clínica y trasfondo de tu personaje:
+"""
+${caseData}
+"""
+
+Historial de la conversación hasta ahora:
+${chatConversation.map(c => `${c.role}:${c.message}`).join('\n')}
+
+Instrucciones estrictas:
+- Responde en primera persona como el paciente de manera natural y conversacional.
+- Describe tus síntomas y antecedentes únicamente si el médico te los pregunta, basándote en la información del caso.
+- NO uses jerga médica especializada a menos que digas que te lo diagnosticaron antes.
+- NUNCA reveles el diagnóstico final explícitamente por tu cuenta.
+- Mantén la respuesta breve (1 a 3 oraciones).`;
+
+      try {
+        const reply = await callGemini(prompt);
+        chatConversation.push({ role: "Paciente", message: reply });
+        chatHistory.innerHTML += `<div class="text-left"><span class="inline-block bg-slate-200 text-slate-800 px-3 py-1.5 rounded-lg max-w-xs md:max-w-md">${reply}</span></div>`;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      } catch (err) {
+        chatHistory.innerHTML += `<div class="text-red-500 text-center">Error: ${err.message}</div>`;
+      } finally {
+        sendChatBtn.disabled = false;
+      }
+    }
+
+    sendChatBtn.addEventListener('click', sendPatientMessage);
+    chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendPatientMessage(); });
+
+    // Modo Paciente Virtual - Concluir Consulta
+    finishConsultBtn.addEventListener('click', async () => {
+      if (chatConversation.length === 0) return alert("Interactúa con el paciente primero antes de concluir.");
+
+      finishConsultBtn.disabled = true;
+      finishConsultBtn.textContent = "Evaluando consulta...";
+      feedbackChatArea.classList.remove('hidden');
+      feedbackChatArea.innerHTML = "<em>El evaluador está analizando tu anamnesis y destreza semiológica...</em>";
+
+      const caseData = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      const prompt = `Actúa como tutor clínico evaluando la anamnesis de un estudiante de medicina.
+Caso real del paciente:
+"""
+${caseData}
+"""
+
+Transcripción del interrogatorio realizado por el estudiante:
+${chatConversation.map(c => `${c.role}:${c.message}`).join('\n')}
+
+Evalúa:
+1. Calidad del interrogatorio (¿hizo preguntas dirigidas al cuadro o dio rodeos innecesarios?).
+2. Datos críticos que el estudiante omitió indagar.
+3. Diagnóstico definitivo que debió sospechar.`;
+
+      try {
+        const evalReply = await callGemini(prompt);
+        feedbackChatArea.innerHTML = `<h4 class="font-bold text-emerald-950 mb-1">Evaluación de la Anamnesis:</h4><div class="whitespace-pre-wrap font-sans">${evalReply}</div>`;
+        blurredDxChat.classList.remove('blur-sm');
+      } catch (err) {
+        feedbackChatArea.innerHTML = `<span class="text-red-600 font-semibold">Error: ${err.message}</span>`;
+      } finally {
+        finishConsultBtn.disabled = false;
+        finishConsultBtn.textContent = "Concluir Consulta y Recibir Evaluación";
+      }
+    });
+
+    // Búsqueda
+    searchInput.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
       filteredCases = cases.filter(c => (c.text || c.disease || "").toLowerCase().includes(q));
       currentIndex = 0;
-      renderCase();
+      renderCurrentCase();
     });
   </script>
 </body>
