@@ -281,30 +281,29 @@
     document.getElementById('randomBtn').addEventListener('click', () => { currentIndex = Math.floor(Math.random() * filteredCases.length); renderCurrentCase(); });
     toggleCaseTextBtn.addEventListener('click', () => fullCaseText.classList.toggle('hidden'));
 
-    // Llamada con modelo actualizado y fallback
+    // Llamada directa y exclusiva con gemini-2.5-flash
     async function callGemini(promptText) {
       const key = apiKeyInput.value.trim();
       if (!key) throw new Error("Falta la API Key en el encabezado superior.");
 
-      const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
-      let lastError = null;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+      
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: promptText }]
+          }]
+        })
+      });
 
-      for (let model of models) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-          });
-          const data = await res.json();
-          if (data.error) throw new Error(data.error.message);
-          return data.candidates[0].content.parts[0].text;
-        } catch (err) {
-          lastError = err;
-        }
+      const data = await res.json();
+      if (data.error) {
+        throw new Error(data.error.message);
       }
-      throw lastError;
+      
+      return data.candidates[0].content.parts[0].text;
     }
 
     // Evaluar Modo Preguntas
