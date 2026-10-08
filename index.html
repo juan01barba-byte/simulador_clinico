@@ -200,7 +200,7 @@
         cases = [];
         for (let l of lines) {
           if (l.trim()) {
-            try { cases.push(JSON.parse(l)); } catch(err){}
+            try { cases.push(JSON.parse(l)); } catch(e){}
           }
         }
 
@@ -218,18 +218,43 @@
 
     window.addEventListener('DOMContentLoaded', loadDatasetAutomatically);
 
+    // Función para extraer texto de casos estructurados
+    function extractCaseText(c) {
+      if (!c) return '';
+      if (typeof c === 'string') return c;
+      if (c.text) return c.text;
+      if (c.conversation && typeof c.conversation === 'string') return c.conversation;
+      
+      const dialogList = c.messages || c.conversation || c.dialogue || c.conversations;
+      if (Array.isArray(dialogList)) {
+        return dialogList.map(m => {
+          const role = m.role || m.from || 'Interlocutor';
+          const content = m.content || m.value || m.text || '';
+          return `${role.toUpperCase()}: ${content}`;
+        }).join('\n\n');
+      }
+
+      if (c.input || c.instruction) {
+        return `${c.instruction || ''}\n${c.input || ''}\n\n${c.output || c.response || ''}`.trim();
+      }
+
+      return JSON.stringify(c, null, 2);
+    }
+
     function renderCurrentCase() {
       if (!filteredCases.length) return;
       const c = filteredCases[currentIndex];
       counter.textContent = `${currentIndex + 1} / ${filteredCases.length}`;
-      const raw = c.text || c.conversation || JSON.stringify(c);
-      const lines = raw.split('\n');
 
-      const initialSnippet = lines.slice(0, 10).join('\n');
-      vignetteText.textContent = initialSnippet;
-      chiefComplaintBox.textContent = lines.slice(0, 5).join('\n');
+      const raw = extractCaseText(c);
+      const lines = raw.split('\n').filter(l => l.trim().length > 0);
 
-      const dxName = c.disease || c.title || "Diagnóstico";
+      // Presentación inicial y motivo de consulta
+      vignetteText.textContent = lines.slice(0, 10).join('\n') || raw.slice(0, 1000);
+      chiefComplaintBox.textContent = lines.slice(0, 4).join('\n') || raw.slice(0, 400);
+
+      // Diagnóstico oculto con filtro blur
+      const dxName = c.disease || c.title || c.diagnosis || c.condition || "Diagnóstico del Caso";
       blurredDxQ.textContent = dxName;
       blurredDxQ.classList.add('blur-sm');
       blurredDxChat.textContent = dxName;
@@ -256,10 +281,10 @@
     document.getElementById('randomBtn').addEventListener('click', () => { currentIndex = Math.floor(Math.random() * filteredCases.length); renderCurrentCase(); });
     toggleCaseTextBtn.addEventListener('click', () => fullCaseText.classList.toggle('hidden'));
 
-    // Llamada a Gemini con modelo actualizado y fallback
+    // Llamada con modelo actualizado y fallback
     async function callGemini(promptText) {
       const key = apiKeyInput.value.trim();
-      if (!key) throw new Error("Falta la API Key de Gemini en la parte superior.");
+      if (!key) throw new Error("Falta la API Key en el encabezado superior.");
 
       const models = ['gemini-3.8-flash', 'gemini-2.5-flash'];
       let lastError = null;
@@ -295,7 +320,7 @@
       feedbackQArea.classList.remove('hidden');
       feedbackQArea.innerHTML = "<em>El tutor de IA está evaluando tus respuestas con el estándar clínico...</em>";
 
-      const caseData = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      const caseData = extractCaseText(filteredCases[currentIndex]);
       const prompt = `Actúa como médico docente evaluando a un interno de medicina.
 Caso clínico de referencia:
 """
@@ -335,7 +360,7 @@ Proporciona:
       chatConversation.push({ role: "Doctor", message: msg });
       sendChatBtn.disabled = true;
 
-      const caseData = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      const caseData = extractCaseText(filteredCases[currentIndex]);
       const prompt = `Actúa como un paciente en consulta médica.
 Información clínica y trasfondo de tu personaje:
 """
@@ -376,7 +401,7 @@ Instrucciones estrictas:
       feedbackChatArea.classList.remove('hidden');
       feedbackChatArea.innerHTML = "<em>El evaluador está analizando tu anamnesis y destreza semiológica...</em>";
 
-      const caseData = filteredCases[currentIndex].text || JSON.stringify(filteredCases[currentIndex]);
+      const caseData = extractCaseText(filteredCases[currentIndex]);
       const prompt = `Actúa como tutor clínico evaluando la anamnesis de un estudiante de medicina.
 Caso real del paciente:
 """
@@ -406,7 +431,10 @@ Evalúa:
     // Búsqueda
     searchInput.addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase();
-      filteredCases = cases.filter(c => (c.text || c.disease || "").toLowerCase().includes(q));
+      filteredCases = cases.filter(c => {
+        const full = (extractCaseText(c) + " " + (c.disease || "")).toLowerCase();
+        return full.includes(q);
+      });
       currentIndex = 0;
       renderCurrentCase();
     });
